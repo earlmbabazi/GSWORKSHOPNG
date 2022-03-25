@@ -1,0 +1,108 @@
+---
+title: "PCA"
+author: "earlmbabazi"
+date: "2022-03-25"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+```{r}
+### Running PCA ##
+
+data = iris
+View(data)
+
+# prepare this data to plot some boxplot of all the four traits # Requires melt function of
+# reshape2 package and tidyverse#
+install.packages("reshape2", repos = "https://cloud.r-project.org")
+
+#Load libraries #
+library(reshape2) 
+library(tidyverse)
+
+dataMelted <- data %>% reshape2::melt(data = .,
+                                      id.vars = "Species",
+                                      variable.name = "trait",
+                                      value.name = "y") # organises data into specified cols
+head(dataMelted)
+
+#now we have the data in the format to make boxplot from all traits at the same code line
+#Here we shall use ggplot2 #
+
+dataMelted %>% ggplot(aes(x = Species, y = y, fill = Species)) +
+     geom_boxplot() + facet_wrap(~trait, scales = "free_y") +
+     theme(legend.position = "none")
+
+# Since the observed traits have different amplitutde (or magnitudes) we need to scale all
+# variables prior to PCA # otherwise @ variable will have a different phenotypic variance #
+DataSc = data %>% select(-Species) %>%
+     scale(x = ., center = TRUE, scale = TRUE) %>%
+     as.data.frame() %>% 
+     mutate(Species = data$Species)
+
+head(DataSc)
+
+### Proceed to do PCA with prcomp #
+PCA = prcomp(DataSc %>% select(-Species))
+
+## Let’s save the important results in objects, so we could make some graphs with them.
+
+# 1. Accumulate percent of the total phenotypic variance explained by the principal components (PC)
+
+Perc = 100 * PCA$sdev^2 / sum(PCA$sdev^2)
+
+PercAc = as.vector(rep(NA, times = length(Perc)))
+for(i in 1:length(Perc)) {
+  PercAc[i] <- sum(Perc[1:i])
+  names(PercAc)[i] <- i
+}
+names(PercAc) <- c("PC1", "PC2", "PC3", "PC4")
+PercAc
+
+# 2. Correlations of the traits with the principal components (PC) #
+
+CorTraits = PCA$rotation
+rownames(CorTraits) = c("SepLen", "SepWid", "PetLen", "PetWid")
+CorTraits
+
+LabelsPCA <- CorTraits %>% as.data.frame %>%
+     mutate(PC1 = PC1 + 0.15, .keep = "unused")
+
+LabelsPCA
+
+#3. Individuals scores for the principal components (PC)
+
+ScoresSpecies <- PCA$x %>%
+     as.data.frame %>% 
+     mutate(Species = data$Species)
+
+head(ScoresSpecies)
+
+#Figures
+#The first figure will be a barplot of the accumulated variances explained by the PC
+#Barplot #
+barplot(PercAc, main = "Variance explained by PCA",
+        ylab = "Cumulative variance (%)", xlab = "Number of retained PCs",
+        col = c("red", "red", "gray", "gray", "gray"))
+
+#Scatter plot individuals with their score for the first two PCs with the correlation of the traits with the first two PCs #
+ggplot(data = ScoresSpecies, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point() + geom_rug(alpha = 0.2, size = 1.5) +
+  geom_segment(mapping = aes(x = 0, xend = 3*PC1, y = 0, yend = 3*PC2),
+               colour = "red",
+               data = CorTraits %>% as.data.frame,
+               arrow = arrow(type = "closed",
+                             length = unit(0.2,units = "cm"))) +
+  geom_text(mapping = aes(x = PC1*3, y = PC2*3, label = rownames(LabelsPCA)),
+            data = LabelsPCA, colour = "black") + 
+  theme_bw() +
+  xlab(paste("PC1 - ", round(Perc[1], digits = 2), "%", sep = "")) +
+     ylab(paste("PC2 - ", round(Perc[2], digits = 2), "%", sep = ""))
+
+wflow_status()
+wflow_publish(files = "analysis/*.Rmd", message = "Test")
+```
+

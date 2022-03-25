@@ -8,4 +8,8 @@ editor_options:
   chunk_output_type: console
 ---
 
-Welcome to my research website.
+Welcome to my research website.This repository was created to assist my learning experience with GitHub and workflowr.
+My first R code at this project will be at this [git hub page](PCA.html)
+
+wflow_open("analysis/PCA.Rmd")
+
