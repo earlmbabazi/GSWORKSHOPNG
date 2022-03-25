@@ -106,5 +106,7 @@ wflow_status()
 wflow_git_commit("analysis/*.Rmd", all = TRUE)
 wflow_publish(files = "analysis/*.Rmd", message = "Test")
 
+
+
 ```
 
