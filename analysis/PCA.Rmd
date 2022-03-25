@@ -103,7 +103,7 @@ ggplot(data = ScoresSpecies, aes(x = PC1, y = PC2, color = Species)) +
      ylab(paste("PC2 - ", round(Perc[2], digits = 2), "%", sep = ""))
 
 wflow_status()
-wflow_git_commit("analysis/*.Rmd", all = TRUE)
+wflow_git_commit("analysis/*.Rmd")
 wflow_publish(files = "analysis/*.Rmd", message = "Test")
 
 
